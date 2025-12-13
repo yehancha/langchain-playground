@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from langchain_core.output_parsers import (
     BaseOutputParser,
     CommaSeparatedListOutputParser,
@@ -7,6 +8,8 @@ from langchain_core.output_parsers import (
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 from pydantic import BaseModel, Field
+
+load_dotenv()
 
 llm = ChatOllama(model="qwen3:0.6b")
 
