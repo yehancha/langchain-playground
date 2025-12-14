@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from langchain_ollama import ChatOllama
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 
@@ -17,10 +17,14 @@ tools = [tavily_tool]
 # Create ToolNode for executing tools
 tool_node = ToolNode(tools)
 
+# System prompt to guide agent behavior
+SYSTEM_PROMPT = """You are a helpful AI assistant. You are talking to a user. When the user shares information about themselves (like saying "I am Yehan"), remember that this information is about THE USER, not about you. When answering questions about the user, refer to them using "you" or "your" (for example, say "Your name is Yehan" not "I am Yehan"). Remember information shared in the conversation and use it to answer questions. Only use the web search tool when you need current, real-time information that isn't available in our conversation history."""
+
 # Create agent node that calls LLM with tools bound
 def agent_node(state: MessagesState):
     """Agent node that calls the LLM with tools bound."""
-    response = llm.bind_tools(tools).invoke(state["messages"])
+    system_message = SystemMessage(content=SYSTEM_PROMPT)
+    response = llm.bind_tools(tools).invoke([system_message] + state["messages"])
     return {"messages": [response]}
 
 # Conditional routing function
@@ -29,8 +33,8 @@ def should_continue(state: MessagesState) -> str:
     messages = state["messages"]
     last_message = messages[-1]
     
-    # If the last message has tool calls, route to tools
-    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+    # If the last message is an AIMessage with tool calls, route to tools
+    if isinstance(last_message, AIMessage) and hasattr(last_message, "tool_calls") and last_message.tool_calls:
         return "tools"
     # Otherwise, end the conversation
     return "end"
@@ -85,7 +89,11 @@ def main():
             
             # Get the last message (should be the AI response)
             last_message = messages[-1]
-            print(f"\nAssistant: {last_message.content}\n")
+            
+            # Only print content if there are no tool calls
+            # (tool calls should execute and loop back to agent)
+            if not (isinstance(last_message, AIMessage) and hasattr(last_message, "tool_calls") and last_message.tool_calls):
+                print(f"\nAssistant: {last_message.content}\n")
             
         except KeyboardInterrupt:
             print("\n\nGoodbye!")
