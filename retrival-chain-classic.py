@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_classic.chains.retrieval import create_retrieval_chain
+from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores.faiss import FAISS
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from langchain_ollama import ChatOllama, OllamaEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
@@ -18,11 +18,6 @@ prompt = ChatPromptTemplate.from_template(
     Question: {input}
     """
 )
-
-
-def format_docs(docs):
-    """Format a list of documents into a single string."""
-    return "\n\n".join(doc.page_content for doc in docs)
 
 
 def get_documents_from_url(url: str):
@@ -40,11 +35,7 @@ def get_db():
     )
 
 
-retrieval_chain = (
-    {"context": get_db().as_retriever() | format_docs, "input": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
+doc_chain = create_stuff_documents_chain(llm, prompt)
+retrieval_chain = create_retrieval_chain(get_db().as_retriever(), doc_chain)
 
-print(retrieval_chain.invoke("What is LCEL?"))
+print(retrieval_chain.invoke({"input": "What is LCEL?"}))
