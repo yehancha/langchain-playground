@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnablePassthrough
 from operator import itemgetter
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
 
 load_dotenv()
 
@@ -19,11 +20,10 @@ prompt = ChatPromptTemplate.from_messages([
     ("human", "{input}"),
 ])
 
-retriever_prompt = ChatPromptTemplate.from_messages([
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{input}"),
-    ("human", "Given the above chat history, generate a question to extract the most relevant information from the vector database. Only return the question, no other text."),
-])
+
+def format_docs(docs):
+    """Format a list of documents into a single string."""
+    return "\n\n".join(doc.page_content for doc in docs)
 
 
 def get_documents_from_url(url: str):
@@ -41,26 +41,14 @@ def get_db():
     )
 
 
-def format_docs(docs):
-    """Format a list of documents into a single string."""
-    return "\n\n".join(doc.page_content for doc in docs)
-
-
 def get_retrieval_chain():
-    retriever = get_db().as_retriever()
-    
-    history_aware_retriever = (
-        {
-            "chat_history": itemgetter("chat_history"),
-            "input": itemgetter("input")
-        }
-        | retriever_prompt
-        | llm
-        | StrOutputParser()
-        | retriever
-    )
-    
-    # Create the full retrieval chain
+    history_aware_retriever = create_history_aware_retriever(llm, get_db().as_retriever(), ChatPromptTemplate.from_messages(
+        [
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{input}"),
+            ("human", "Given the above chat history, generate a question to extract the most relevant information from the vector database. Only return the question, no other text."),
+        ]
+    ))
     return (
         {
             "context": RunnablePassthrough() | history_aware_retriever | format_docs,
