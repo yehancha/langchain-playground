@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnablePassthrough
 from operator import itemgetter
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
 
 load_dotenv()
 
@@ -41,9 +42,16 @@ def get_db():
 
 
 def get_retrieval_chain():
+    history_aware_retriever = create_history_aware_retriever(llm, get_db().as_retriever(), ChatPromptTemplate.from_messages(
+        [
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{input}"),
+            ("human", "Given the above chat history, generate a question to extract the most relevant information from the vector database. Only return the question, no other text."),
+        ]
+    ))
     return (
         {
-            "context": itemgetter("input") | get_db().as_retriever() | format_docs,
+            "context": RunnablePassthrough() | history_aware_retriever | format_docs,
             "input": itemgetter("input"),
             "chat_history": itemgetter("chat_history")
         }
@@ -65,5 +73,5 @@ if __name__ == "__main__":
 
         chat_history.append(HumanMessage(content=user_input))
         chat_history.append(AIMessage(content=response))
-        
+
         print(f"Assistant: {response}")
