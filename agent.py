@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from langchain_ollama import ChatOllama
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.tools import tool
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 
@@ -12,7 +13,31 @@ llm = ChatOllama(model="qwen3:0.6b", temperature=0.4)
 
 # Initialize Tavily search tool
 tavily_tool = TavilySearchResults(max_results=5)
-tools = [tavily_tool]
+
+# Temperature comparison tool
+@tool
+def compare_temperatures(location1: str, temperature1: float, location2: str, temperature2: float) -> str:
+    """Compare temperatures between two locations. Use this after searching for temperatures of both locations.
+    
+    Args:
+        location1: Name of the first location
+        temperature1: Temperature of the first location (in the same unit as temperature2)
+        location2: Name of the second location
+        temperature2: Temperature of the second location (in the same unit as temperature1)
+    
+    Returns:
+        A string describing which location is colder/warmer and by how much.
+    """
+    diff = abs(temperature1 - temperature2)
+    
+    if temperature1 < temperature2:
+        return f"{location1} is colder than {location2} by {diff:.1f} degrees. {location1}: {temperature1}°, {location2}: {temperature2}°"
+    elif temperature1 > temperature2:
+        return f"{location2} is colder than {location1} by {diff:.1f} degrees. {location1}: {temperature1}°, {location2}: {temperature2}°"
+    else:
+        return f"{location1} and {location2} have the same temperature: {temperature1}°"
+
+tools = [tavily_tool, compare_temperatures]
 
 # Create ToolNode for executing tools
 tool_node = ToolNode(tools)
