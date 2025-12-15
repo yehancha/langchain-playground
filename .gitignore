@@ -9,3 +9,7 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+# Data
+general-relativity-faiss/
+*.pdf

@@ -722,6 +722,7 @@ dependencies = [
     { name = "langchain-ollama" },
     { name = "langchain-tavily" },
     { name = "langsmith" },
+    { name = "pypdf" },
     { name = "python-dotenv" },
     { name = "tavily-python" },
 ]
@@ -739,6 +740,7 @@ requires-dist = [
     { name = "langchain-ollama", specifier = ">=1.0.1" },
     { name = "langchain-tavily", specifier = ">=0.2.14" },
     { name = "langsmith", specifier = ">=0.4.59" },
+    { name = "pypdf", specifier = ">=6.4.2" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "tavily-python", specifier = ">=0.7.15" },
 ]
@@ -1362,6 +1364,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/43/4b/ac7e0aae12027748076d72a8764ff1c9d82ca75a7a52622e67ed3f765c54/pydantic_settings-2.12.0.tar.gz", hash = "sha256:005538ef951e3c2a68e1c08b292b5f2e71490def8589d4221b95dab00dafcfd0", size = 194184, upload-time = "2025-11-10T14:25:47.013Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/60/5d4751ba3f4a40a6891f24eec885f51afd78d208498268c734e256fb13c4/pydantic_settings-2.12.0-py3-none-any.whl", hash = "sha256:fddb9fd99a5b18da837b29710391e945b1e30c135477f484084ee513adb93809", size = 51880, upload-time = "2025-11-10T14:25:45.546Z" },
+]
+
+[[package]]
+name = "pypdf"
+version = "6.4.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/c2/b59b02ff7f2dc006799d2c5dc3a8877686890abdd915176ef799070edf17/pypdf-6.4.2.tar.gz", hash = "sha256:c466ff1272ffb4712c2348d2bbc3019bc93f1c62ccfaf50808e3b9f13c3dc527", size = 5275502, upload-time = "2025-12-14T14:30:58.58Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/38/99/3147435e15ccd97c0451efc3d13495dc22602e9887f81e64f1b135bae821/pypdf-6.4.2-py3-none-any.whl", hash = "sha256:014dcff867fd99fc0b6fc90ed1f7e1347ef2317ae038a489c2caa64106d268f4", size = 328212, upload-time = "2025-12-14T14:30:56.701Z" },
 ]
 
 [[package]]

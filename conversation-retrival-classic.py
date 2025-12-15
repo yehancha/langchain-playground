@@ -1,24 +1,32 @@
+from operator import itemgetter
+
 from dotenv import load_dotenv
+from langchain_classic.chains.history_aware_retriever import (
+    create_history_aware_retriever,
+)
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores.faiss import FAISS
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
-from operator import itemgetter
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_classic.chains.history_aware_retriever import create_history_aware_retriever
 
 load_dotenv()
 
 llm = ChatOllama(model="qwen3:0.6b", temperature=0.4)
 
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "Answer the user's question based on the context provided. Context: {context}"),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{input}"),
-])
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Answer the user's question based on the context provided. Context: {context}",
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}"),
+    ]
+)
 
 
 def format_docs(docs):
@@ -42,26 +50,37 @@ def get_db():
 
 
 def get_retrieval_chain():
-    history_aware_retriever = create_history_aware_retriever(llm, get_db().as_retriever(), ChatPromptTemplate.from_messages(
-        [
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}"),
-            ("human", "Given the above chat history, generate a question to extract the most relevant information from the vector database. Only return the question, no other text."),
-        ]
-    ))
+    history_aware_retriever = create_history_aware_retriever(
+        llm,
+        get_db().as_retriever(),
+        ChatPromptTemplate.from_messages(
+            [
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", "{input}"),
+                (
+                    "human",
+                    "Given the above chat history, generate a question to extract the most relevant information from the vector database. Only return the question, no other text.",
+                ),
+            ]
+        ),
+    )
     return (
         {
             "context": RunnablePassthrough() | history_aware_retriever | format_docs,
             "input": itemgetter("input"),
-            "chat_history": itemgetter("chat_history")
+            "chat_history": itemgetter("chat_history"),
         }
         | prompt
         | llm
         | StrOutputParser()
     )
 
+
 def process_chat(user_input: str, chat_history: list[tuple[str, str]]):
-    return get_retrieval_chain().invoke({"input": user_input, "chat_history": chat_history})
+    return get_retrieval_chain().invoke(
+        {"input": user_input, "chat_history": chat_history}
+    )
+
 
 if __name__ == "__main__":
     chat_history = []
